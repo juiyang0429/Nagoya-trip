@@ -327,17 +327,19 @@ form.f{display:grid;gap:10px;padding:14px}
 <div style="height:40px"></div>
 <div id="toast"></div>
 
+<!-- 你的設定放在同資料夾的 config.js，之後換新版 index.html 也不會被蓋掉 -->
+<script src="config.js"></script>
 <script>
 /* ══════════════════════════════════════════════════════════════
    ⚙️  設定區 — 只有這三行需要你動
    ══════════════════════════════════════════════════════════════ */
-const SHEET_ID = '12LeEWB_9spEOQ3VZsW0G1gYmokRuWO6GupZsMrLSbdQ';
-// ↓ 貼「網頁應用程式」的完整網址，長這樣：
-//   https://script.google.com/macros/s/AKfycb……/exec
-//   （只貼 AKfycb 開頭那一段也可以，程式會自動補齊）
-//   ⚠️ 不要貼「指令碼 ID」（1BzT… 開頭的那種），那個不是網址
-const GAS_URL  = '';
-const TOKEN    = 'Sx2R1Kz0rjCTIQEJADZKNC7vyXDTJhW0LWpkM1md';  // ← 要和 Code.gs 的 TOKEN 一模一樣
+/* 設定值全部放在同資料夾的 config.js（window.TRIP_CONFIG）。
+   這樣之後換新版 index.html，你的 Apps Script 網址不會被蓋掉。
+   config.js 沒放或讀不到時，就用下面的預設值。 */
+const CONF     = (typeof window!=='undefined' && window.TRIP_CONFIG) || {};
+const SHEET_ID = CONF.SHEET_ID || '12LeEWB_9spEOQ3VZsW0G1gYmokRuWO6GupZsMrLSbdQ';
+const GAS_URL  = CONF.GAS_URL  || 'https://script.google.com/macros/s/AKfycbwPdggwD9ra2JihOnRz34m1OuZddD3jD2gqoKIaI3WK72hdsVcGJNPfd39Kv4qfSNVC/exec';
+const TOKEN    = CONF.TOKEN    || 'Sx2R1Kz0rjCTIQEJADZKNC7vyXDTJhW0LWpkM1md';
 /* ══════════════════════════════════════════════════════════════ */
 
 const $  = s => document.querySelector(s);
@@ -442,7 +444,7 @@ const GAS_OK_RE = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
 const pingUrl = () => GAS+'?token='+encodeURIComponent(TOKEN)+'&action=ping';
 
 async function bootData(){
-  if(!GAS) return 'csv';
+  if(!GAS){ GAS_ERR='NOCONFIG'; return 'csv'; }
   if(!GAS_OK_RE.test(GAS)){ GAS_ERR='FORMAT'; return 'csv'; }
   try{ ALL = await callGAS('getAll',{}); return 'gas'; }
   catch(e){ GAS_ERR=e.message; console.warn('Apps Script 失敗，改用 CSV：',e.message); return 'csv'; }
@@ -450,6 +452,15 @@ async function bootData(){
 
 /* 連不上 Apps Script 時，直接在畫面上把該檢查的東西列出來 */
 function gasHelp(){
+  if(GAS_ERR==='NOCONFIG') return `<div class="err">
+    <b>還沒設定 Apps Script 網址</b>
+    請在和 <code>index.html</code> <b>同一個資料夾</b>放一個 <code>config.js</code>，內容：<br><br>
+    <code>window.TRIP_CONFIG = {<br>
+    &nbsp;&nbsp;SHEET_ID: '${esc(SHEET_ID)}',<br>
+    &nbsp;&nbsp;GAS_URL&nbsp;: 'https://script.google.com/macros/s/AKfycb……/exec',<br>
+    &nbsp;&nbsp;TOKEN&nbsp;&nbsp;&nbsp;: '${esc(TOKEN)}'<br>
+    };</code><br><br>
+    這個檔只要建立一次。之後換新版 <code>index.html</code> 都不會影響它。</div>`;
   if(GAS_ERR==='FORMAT'){
     const looksLikeScriptId = /^1[\w-]{20,}$/.test(String(GAS_URL).trim());
     return `<div class="err">
