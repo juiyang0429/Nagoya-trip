@@ -203,6 +203,17 @@ form.f{display:grid;gap:10px;padding:14px}
 .cl-item .txt{font-size:14px;font-weight:600;line-height:1.5}
 .cl-item .who{font-size:11.5px;color:var(--ink3);margin-top:2px}
 
+/* 圖片放大 */
+#lb{position:fixed;inset:0;background:rgba(20,18,17,.92);z-index:200;display:none;
+  align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
+#lb.on{display:flex}
+#lb img{max-width:100%;max-height:86vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#lb .cap{position:absolute;left:0;right:0;bottom:22px;text-align:center;color:#fff;
+  font-size:14px;font-weight:700;text-shadow:0 1px 6px rgba(0,0,0,.6);padding:0 24px}
+#lb .x{position:absolute;top:14px;right:16px;color:#fff;font-size:30px;line-height:1;
+  opacity:.75;background:none;border:0;cursor:pointer}
+.thumb{cursor:zoom-in}
+
 /* Toast */
 #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
   background:var(--ink);color:#fff;padding:11px 20px;border-radius:99px;font-size:13.5px;
@@ -325,6 +336,7 @@ form.f{display:grid;gap:10px;padding:14px}
 </main>
 
 <div style="height:40px"></div>
+<div id="lb"><button class="x" aria-label="關閉">&times;</button><img alt=""><div class="cap"></div></div>
 <div id="toast"></div>
 
 <!-- 你的設定放在同資料夾的 config.js，之後換新版 index.html 也不會被蓋掉 -->
@@ -385,9 +397,10 @@ const bool = v => /^(true|yes|1|v|✓|是)$/i.test(String(v).trim());
 const esc  = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num  = v => { const n = parseFloat(String(v??'').replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; };
 const nt   = n => 'NT$'+Math.round(n).toLocaleString('en-US');
-function driveImg(u){
-  const m = String(u||'').match(/\/d\/([-\w]{20,})|[?&]id=([-\w]{20,})/);
-  return m ? `https://drive.google.com/thumbnail?id=${m[1]||m[2]}&sz=w400` : u;
+function driveImg(u,w){
+  const s = String(u||'').trim();
+  const m = s.match(/\/d\/([-\w]{20,})|[?&]id=([-\w]{20,})/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]||m[2]}&sz=w${w||400}` : s;
 }
 function mapLink(q,url){
   if(url && /^https?:/.test(url)) return url;
@@ -774,7 +787,10 @@ async function loadHotel(){
         <div class="dates">${esc(r['入住日']||'')} → ${esc(r['退房日']||'')}</div>
         <h4>${esc(r['名稱']||'')}</h4>
         ${r['總價']?`<div style="font-weight:900;color:var(--brand-d);margin-top:2px">${esc(r['總價'])}</div>`:''}
-        ${r['圖片']?`<img src="${esc(driveImg(r['圖片']))}" style="border-radius:12px;margin-top:10px" loading="lazy" alt="">`:''}
+        ${r['圖片']?`<img class="thumb" src="${esc(driveImg(r['圖片'],800))}"
+            data-full="${esc(driveImg(r['圖片'],1600))}" data-cap="${esc(r['名稱']||'')}"
+            style="border-radius:12px;margin-top:10px;width:100%" loading="lazy" alt=""
+            onerror="this.style.display='none'">`:''}
         <dl class="kv">${kv.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           ${ml?`<a class="btn sm ghost" style="text-decoration:none" href="${esc(ml)}" target="_blank" rel="noopener">📍 開地圖</a>`:''}
@@ -830,12 +846,28 @@ function renderShop(){
               ${r['折價券']&&/^https?:/.test(r['折價券'])?`<a href="${esc(r['折價券'])}" target="_blank" rel="noopener">🎟 折價券</a>`:''}
             </div>
           </div>
-          ${r['圖片']?`<img class="thumb" src="${esc(driveImg(r['圖片']))}" loading="lazy" alt="">`:'<span></span>'}
+          ${r['圖片']?`<img class="thumb" src="${esc(driveImg(r['圖片'],400))}"
+              data-full="${esc(driveImg(r['圖片'],1600))}" data-cap="${esc(r['商品']||'')}"
+              loading="lazy" alt="" onerror="this.style.display='none'">`:'<span></span>'}
         </div>`;
       }).join('');
   }).join('');
 }
+/* 點縮圖放大（購物、住宿都可以） */
+function openLB(img){
+  const lb=$('#lb');
+  lb.querySelector('img').src = img.dataset.full || img.src;
+  lb.querySelector('.cap').textContent = img.dataset.cap || '';
+  lb.classList.add('on');
+}
+$('#lb').onclick = ()=>$('#lb').classList.remove('on');
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('#lb').classList.remove('on'); });
+$('#ho-box').addEventListener('click',e=>{
+  const im=e.target.closest('.thumb'); if(im) openLB(im);
+});
+
 $('#sh-box').onclick = async e=>{
+  const im=e.target.closest('.thumb'); if(im){ openLB(im); return; }
   const b=e.target.closest('.cb'); if(!b) return;
   const id=b.dataset.id, v=b.dataset.v;
   b.classList.toggle('on', v==='TRUE');           // 先給回饋
