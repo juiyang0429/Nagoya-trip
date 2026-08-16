@@ -44,7 +44,8 @@ button{font-family:inherit}
   padding:4px 11px;border-radius:99px;font-size:12.5px;font-weight:500;backdrop-filter:blur(4px)}
 
 /* ══════════════════════════ Tabs ══════════════════════════ */
-.tabbar{position:sticky;top:0;z-index:40;background:rgba(251,247,242,.94);
+.tabbar{position:sticky;top:0;z-index:40;background:var(--bg);
+  background:color-mix(in srgb,var(--bg) 92%,transparent);
   backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .tabbar .inner{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:8px 16px}
 .tabbar .inner::-webkit-scrollbar{display:none}
@@ -119,7 +120,7 @@ button{font-family:inherit}
 .bal .who{font-weight:700}
 .bal .amt{font-weight:900;font-variant-numeric:tabular-nums}
 .pos{color:var(--ok)} .neg{color:var(--brand-d)}
-.settle{background:var(--brand-l);border:1px solid #E5CCC4;border-radius:13px;padding:12px 14px;
+.settle{background:var(--brand-l);border:1px solid color-mix(in srgb,var(--brand) 22%,transparent);border-radius:13px;padding:12px 14px;
   font-size:13.5px;line-height:1.9}
 .settle .row{display:flex;align-items:center;gap:7px}
 .settle b{font-weight:900}
@@ -170,7 +171,7 @@ form.f{display:grid;gap:10px;padding:14px}
 .shop .links{display:flex;gap:9px;margin-top:6px;font-size:12px}
 .shop .links a{text-decoration:none;font-weight:700}
 .thumb{width:52px;height:52px;border-radius:10px;object-fit:cover;background:#F0EBE5;border:1px solid var(--line)}
-.store-h{background:#F5EFE8;padding:7px 14px;font-size:12.5px;font-weight:900;color:var(--ink2);
+.store-h{background:var(--brand-l);padding:7px 14px;font-size:12.5px;font-weight:900;color:var(--ink2);
   position:sticky;top:52px;z-index:5}
 #sh-box{border-radius:var(--r)}
 #sh-box .store-h:first-child{border-radius:var(--r) var(--r) 0 0}
@@ -335,7 +336,7 @@ const SHEET_ID = '12LeEWB_9spEOQ3VZsW0G1gYmokRuWO6GupZsMrLSbdQ';
 //   https://script.google.com/macros/s/AKfycb……/exec
 //   （只貼 AKfycb 開頭那一段也可以，程式會自動補齊）
 //   ⚠️ 不要貼「指令碼 ID」（1BzT… 開頭的那種），那個不是網址
-const GAS_URL  = 'https://script.google.com/macros/s/AKfycbwPdggwD9ra2JihOnRz34m1OuZddD3jD2gqoKIaI3WK72hdsVcGJNPfd39Kv4qfSNVC/exec';
+const GAS_URL  = '';
 const TOKEN    = 'Sx2R1Kz0rjCTIQEJADZKNC7vyXDTJhW0LWpkM1md';  // ← 要和 Code.gs 的 TOKEN 一模一樣
 /* ══════════════════════════════════════════════════════════════ */
 
@@ -492,6 +493,41 @@ const errBox = e => GAS_ERR ? gasHelp()
               : e.message==='SHARING' ? HELP_SHARE
               : `<div class="err">${esc(e.message)}</div>`;
 
+
+/* ─────────────── 配色：由「主題色」一格自動推導整套 ─────────────── */
+function hex2hsl(x){
+  let h=String(x).trim().replace('#','');
+  if(h.length===3) h=h.split('').map(c=>c+c).join('');
+  if(!/^[0-9a-f]{6}$/i.test(h)) return null;
+  const r=parseInt(h.slice(0,2),16)/255,g=parseInt(h.slice(2,4),16)/255,b=parseInt(h.slice(4,6),16)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b); let hh=0,ss=0; const ll=(mx+mn)/2;
+  if(mx!==mn){ const d=mx-mn; ss=ll>.5?d/(2-mx-mn):d/(mx+mn);
+    hh = mx===r?((g-b)/d+(g<b?6:0)) : mx===g?((b-r)/d+2) : ((r-g)/d+4); hh/=6; }
+  return [hh*360, ss*100, ll*100];
+}
+function hsl2hex(h,s,l){
+  s=Math.max(0,Math.min(100,s))/100; l=Math.max(0,Math.min(100,l))/100;
+  const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l);
+  const f=n=>{ const v=l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+               return Math.round(255*v).toString(16).padStart(2,'0'); };
+  return '#'+f(0)+f(8)+f(4);
+}
+function applyTheme(){
+  const R=document.documentElement.style;
+  const hsl=hex2hsl(CFG['主題色']||'#C8553D');
+  if(hsl){
+    const [h,s,l]=hsl;
+    R.setProperty('--brand',   CFG['主題色'].trim());
+    R.setProperty('--brand-d', hsl2hex(h, Math.min(100,s*1.06), Math.max(16,l*0.74)));  // Hero 漸層、連結
+    R.setProperty('--brand-l', hsl2hex(h, Math.min(60,s*0.90), 91));                     // 淺底色塊
+    R.setProperty('--bg',      hex2hsl(CFG['背景色']||'') ? CFG['背景色'].trim()
+                                                          : hsl2hex(h, Math.min(45,s*0.80), 97));
+    R.setProperty('--line',    hsl2hex(h, Math.min(35,s*0.45), 90));
+    const mt=document.querySelector('meta[name=theme-color]'); if(mt) mt.content=CFG['主題色'].trim();
+  }
+  if(CFG['圓角']) R.setProperty('--r', String(parseInt(CFG['圓角'],10)||16)+'px');
+}
+
 /* ═══════════════════ 啟動 ═══════════════════ */
 (async function init(){
   try{
@@ -510,10 +546,7 @@ const errBox = e => GAS_ERR ? gasHelp()
   DAYS    = parseInt(CFG['天數']||'5',10) || 5;
   const sd = (CFG['出發日']||'').replace(/[.\-]/g,'/');
   START   = /^\d{4}\/\d{1,2}\/\d{1,2}$/.test(sd) ? new Date(sd+' 00:00:00') : null;
-  if(CFG['主題色']){
-    document.documentElement.style.setProperty('--brand',CFG['主題色']);
-    document.querySelector('meta[name=theme-color]').content=CFG['主題色'];
-  }
+  applyTheme();
 
   document.title = CFG['標題']||'旅遊行程';
   $('#h-title').textContent = CFG['標題']||'旅遊行程';
