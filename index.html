@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C8553D">
+<title>名古屋 5天4夜</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════ 基本 ══════════════════════════ */
+:root{
+  --brand:#C8553D; --brand-d:#A33F2B; --brand-l:#F3E0DB;
+  --ink:#22201F; --ink2:#5C5754; --ink3:#8C8480;
+  --bg:#FBF7F2; --card:#fff; --line:#EBE3DA;
+  --ok:#2E7D5B; --warn:#B8860B; --sh:0 1px 2px rgba(34,32,31,.05),0 8px 24px rgba(34,32,31,.06);
+  --r:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.6;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+img{max-width:100%;display:block}
+a{color:var(--brand-d)}
+button{font-family:inherit}
+.wrap{max-width:820px;margin:0 auto;padding:0 16px}
+.hide{display:none!important}
+
+/* ══════════════════════════ Hero ══════════════════════════ */
+.hero{
+  background:linear-gradient(160deg,var(--brand) 0%,var(--brand-d) 100%);
+  color:#fff;padding:calc(22px + env(safe-area-inset-top)) 0 18px;position:relative;overflow:hidden;
+}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;
+  background:rgba(255,255,255,.08);border-radius:50%}
+.hero h1{margin:0;font-size:27px;font-weight:900;letter-spacing:.5px;position:relative}
+.hero .sub{margin:4px 0 0;opacity:.9;font-size:13.5px;position:relative}
+.hero .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;position:relative}
+.chip{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);
+  padding:4px 11px;border-radius:99px;font-size:12.5px;font-weight:500;backdrop-filter:blur(4px)}
+
+/* ══════════════════════════ Tabs ══════════════════════════ */
+.tabbar{position:sticky;top:0;z-index:40;background:rgba(251,247,242,.94);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.tabbar .inner{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:8px 16px}
+.tabbar .inner::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;border:0;background:transparent;color:var(--ink3);font-size:14px;font-weight:700;
+  padding:8px 14px;border-radius:99px;cursor:pointer;white-space:nowrap;transition:.15s}
+.tab.on{background:var(--brand);color:#fff;box-shadow:0 3px 10px rgba(200,85,61,.3)}
+
+/* ══════════════════════════ 通用元件 ══════════════════════════ */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.sec{margin:18px 0}
+.sec-t{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 10px;
+  font-size:15px;font-weight:900;letter-spacing:.3px}
+.sec-t small{font-weight:500;color:var(--ink3);font-size:12px}
+.muted{color:var(--ink3);font-size:13px}
+.loading{padding:40px 0;text-align:center;color:var(--ink3);font-size:14px}
+.spin{width:22px;height:22px;border:2.5px solid var(--line);border-top-color:var(--brand);
+  border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err{background:#FFF1EE;border:1px solid #F3C9C0;color:#9B3320;padding:14px 16px;
+  border-radius:12px;font-size:13.5px;margin:14px 0;line-height:1.7}
+.err b{display:block;margin-bottom:4px}
+.btn{border:0;background:var(--brand);color:#fff;font-weight:700;font-size:14px;
+  padding:11px 18px;border-radius:11px;cursor:pointer;transition:.15s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--brand-d);border:1.5px solid var(--brand-l)}
+.btn.sm{padding:7px 13px;font-size:13px;border-radius:9px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:700}
+
+/* 日期選擇 */
+.days{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:2px 0 4px}
+.days::-webkit-scrollbar{display:none}
+.day{flex:0 0 auto;background:#fff;border:1.5px solid var(--line);border-radius:13px;
+  padding:9px 14px;cursor:pointer;text-align:center;min-width:74px;transition:.15s}
+.day b{display:block;font-size:14px;font-weight:900}
+.day span{display:block;font-size:11px;color:var(--ink3);margin-top:1px}
+.day.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.day.on span{color:rgba(255,255,255,.85)}
+
+/* ══════════════════════════ 行程時間軸 ══════════════════════════ */
+.tl{position:relative;padding-left:6px}
+.tl-item{display:grid;grid-template-columns:56px 1fr;gap:12px;position:relative}
+.tl-time{text-align:right;padding-top:14px}
+.tl-time b{display:block;font-size:13.5px;font-weight:900;font-variant-numeric:tabular-nums}
+.tl-time span{font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.tl-body{position:relative;padding:0 0 12px 20px;border-left:2px solid var(--line)}
+.tl-item:last-child .tl-body{border-left-color:transparent}
+.tl-dot{position:absolute;left:-7px;top:16px;width:12px;height:12px;border-radius:50%;
+  background:#fff;border:3px solid var(--brand)}
+.tl-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--sh)}
+.tl-card h4{margin:0;font-size:15px;font-weight:800;line-height:1.45}
+.tl-card .desc{margin:6px 0 0;font-size:13px;color:var(--ink2);white-space:pre-wrap}
+.tl-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.tl-foot{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px;padding-top:9px;
+  border-top:1px dashed var(--line);font-size:12px;color:var(--ink3)}
+.tl-foot a{text-decoration:none;font-weight:700}
+.t-交通{background:#E8EEF6;color:#2C4E7A}
+.t-景點{background:#E6F1EA;color:#22694A}
+.t-美食{background:#FBEAD9;color:#8A5116}
+.t-購物{background:#F3E7F5;color:#6B3179}
+.t-住宿{background:#FDECEC;color:#93312B}
+.t-其他{background:#EFEDEA;color:#5C5754}
+
+/* ══════════════════════════ 花費 ══════════════════════════ */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px 10px;text-align:center}
+.stat b{display:block;font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.stat span{font-size:11.5px;color:var(--ink3)}
+.bal{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;
+  border-bottom:1px solid var(--line);font-size:14px}
+.bal:last-child{border-bottom:0}
+.bal .who{font-weight:700}
+.bal .amt{font-weight:900;font-variant-numeric:tabular-nums}
+.pos{color:var(--ok)} .neg{color:var(--brand-d)}
+.settle{background:var(--brand-l);border:1px solid #E5CCC4;border-radius:13px;padding:12px 14px;
+  font-size:13.5px;line-height:1.9}
+.settle .row{display:flex;align-items:center;gap:7px}
+.settle b{font-weight:900}
+.exp-item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 14px;
+  border-bottom:1px solid var(--line)}
+.exp-item:last-child{border-bottom:0}
+.exp-item h5{margin:0;font-size:14.5px;font-weight:700}
+.exp-item .sub{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.exp-item .money{text-align:right;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+.exp-item .money small{display:block;font-weight:500;color:var(--ink3);font-size:11px}
+.exp-item.done{opacity:.5}
+form.f{display:grid;gap:10px;padding:14px}
+.f label{font-size:12px;font-weight:700;color:var(--ink2);display:block;margin-bottom:4px}
+.f input,.f select,.f textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;
+  padding:10px 12px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink)}
+.f input:focus,.f select:focus{outline:0;border-color:var(--brand)}
+.f .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.picks{display:flex;gap:7px;flex-wrap:wrap}
+.pick{border:1.5px solid var(--line);background:#fff;color:var(--ink3);border-radius:99px;
+  padding:7px 15px;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s}
+.pick.on{background:var(--brand);border-color:var(--brand);color:#fff}
+
+/* ══════════════════════════ 住宿 ══════════════════════════ */
+.hotel{padding:15px 16px;margin-bottom:12px}
+.hotel h4{margin:0 0 2px;font-size:16.5px;font-weight:900}
+.hotel .dates{font-size:12.5px;color:var(--brand-d);font-weight:700}
+.kv{display:grid;grid-template-columns:74px 1fr;gap:4px 10px;margin-top:11px;
+  padding-top:11px;border-top:1px dashed var(--line);font-size:13px}
+.kv dt{color:var(--ink3);font-weight:700}
+.kv dd{margin:0;white-space:pre-wrap;color:var(--ink2)}
+
+/* ══════════════════════════ 購物 ══════════════════════════ */
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.filters select,.filters input{border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;
+  font-size:14px;font-family:inherit;background:#fff;width:100%}
+.filters .full{grid-column:1/-1}
+.shop{display:grid;grid-template-columns:auto 1fr auto;gap:11px;padding:12px 14px;
+  border-bottom:1px solid var(--line);align-items:start}
+.shop:last-child{border-bottom:0}
+.shop.done .name{text-decoration:line-through;color:var(--ink3)}
+.cb{width:23px;height:23px;border:2px solid var(--line);border-radius:7px;background:#fff;
+  cursor:pointer;flex:0 0 auto;margin-top:2px;position:relative;transition:.15s}
+.cb.on{background:var(--ok);border-color:var(--ok)}
+.cb.on::after{content:"";position:absolute;left:7px;top:2.5px;width:5px;height:11px;
+  border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(42deg)}
+.shop .name{font-size:14.5px;font-weight:700;line-height:1.45}
+.shop .who{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.shop .links{display:flex;gap:9px;margin-top:6px;font-size:12px}
+.shop .links a{text-decoration:none;font-weight:700}
+.thumb{width:52px;height:52px;border-radius:10px;object-fit:cover;background:#F0EBE5;border:1px solid var(--line)}
+.store-h{background:#F5EFE8;padding:7px 14px;font-size:12.5px;font-weight:900;color:var(--ink2);
+  position:sticky;top:52px;z-index:5}
+#sh-box{border-radius:var(--r)}
+#sh-box .store-h:first-child{border-radius:var(--r) var(--r) 0 0}
+#sh-box .shop:last-child{border-radius:0 0 var(--r) var(--r)}
+
+/* ══════════════════════════ 航班 ══════════════════════════ */
+.fly{padding:16px;margin-bottom:12px}
+.fly .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.fly .rt{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center}
+.fly .ap{font-size:19px;font-weight:900}
+.fly .tm{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.fly .dt{font-size:11px;color:var(--ink3)}
+.fly .arrow{color:var(--brand);font-size:12px;position:relative;padding:0 4px}
+.fly .arrow::before{content:"";position:absolute;left:-6px;right:-6px;top:50%;height:1.5px;
+  background:repeating-linear-gradient(90deg,var(--line) 0 4px,transparent 4px 8px)}
+.fly .arrow span{position:relative;background:#fff;padding:0 4px}
+
+/* ══════════════════════════ 行前清單 ══════════════════════════ */
+.prog{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0 2px}
+.prog i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:.3s}
+.cl-cat{margin-bottom:12px;overflow:hidden}
+.cl-cat > summary{padding:13px 15px;font-size:14.5px;font-weight:900;cursor:pointer;
+  list-style:none;display:flex;justify-content:space-between;align-items:center}
+.cl-cat > summary::-webkit-details-marker{display:none}
+.cl-cat > summary small{font-weight:600;color:var(--ink3);font-size:12px}
+.cl-item{display:grid;grid-template-columns:auto 1fr;gap:11px;padding:11px 15px;
+  border-top:1px solid var(--line);align-items:start}
+.cl-item.done .txt{text-decoration:line-through;color:var(--ink3)}
+.cl-item .txt{font-size:14px;font-weight:600;line-height:1.5}
+.cl-item .who{font-size:11.5px;color:var(--ink3);margin-top:2px}
+
+/* Toast */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:11px 20px;border-radius:99px;font-size:13.5px;
+  font-weight:700;z-index:99;opacity:0;pointer-events:none;transition:.25s;max-width:90vw}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.bad{background:#9B3320}
+
+@media(max-width:420px){
+  .hero h1{font-size:23px}
+  .stat b{font-size:16px}
+  .filters{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════ Hero ════════════ -->
+<header class="hero"><div class="wrap">
+  <h1 id="h-title">載入中…</h1>
+  <p class="sub" id="h-sub"></p>
+  <div class="meta" id="h-meta"></div>
+</div></header>
+
+<!-- ════════════ Tabs ════════════ -->
+<nav class="tabbar"><div class="inner wrap" id="tabbar">
+  <button class="tab on" data-t="itinerary">🗓 行程</button>
+  <button class="tab" data-t="expense">💰 分帳</button>
+  <button class="tab" data-t="hotel">🏨 住宿</button>
+  <button class="tab" data-t="shop">🛍 購物</button>
+  <button class="tab" data-t="flight">✈️ 航班</button>
+  <button class="tab" data-t="checklist">✅ 行前</button>
+</div></nav>
+
+<main class="wrap">
+  <div id="boot"></div>
+
+  <!-- 行程 -->
+  <section id="p-itinerary">
+    <div class="sec"><div class="days" id="days"></div></div>
+    <div id="tl-box"><div class="loading"><div class="spin"></div>載入行程…</div></div>
+  </section>
+
+  <!-- 分帳 -->
+  <section id="p-expense" class="hide">
+    <div class="sec">
+      <div class="sec-t">總覽 <small id="ex-rate"></small></div>
+      <div class="stat-row" id="ex-stats"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-t">每個人的收支 <small>正數 = 該收回</small></div>
+      <div class="card" id="ex-bal"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-t">結算建議 <small>最少轉帳次數</small></div>
+      <div class="settle" id="ex-settle"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-t">記一筆</div>
+      <div class="card"><form class="f" id="ex-form">
+        <div class="two">
+          <div><label>日期</label><input type="date" id="f-date" required></div>
+          <div><label>分類</label><select id="f-cat">
+            <option>餐飲</option><option>交通</option><option>門票</option>
+            <option>購物</option><option>住宿</option><option>機票</option><option>其他</option>
+          </select></div>
+        </div>
+        <div><label>項目</label><input id="f-item" placeholder="例：矢場とん 晚餐" required></div>
+        <div><label>付款人</label><div class="picks" id="f-payer"></div></div>
+        <div class="two">
+          <div><label>日幣 ¥</label><input type="number" id="f-jpy" inputmode="decimal" placeholder="0"></div>
+          <div><label>台幣 NT$</label><input type="number" id="f-twd" inputmode="decimal" placeholder="0"></div>
+        </div>
+        <div><label>誰要分攤 <span class="muted">（點一下切換）</span></label>
+          <div class="picks" id="f-split"></div></div>
+        <div><label>備註</label><input id="f-note" placeholder="可留空"></div>
+        <button class="btn" type="submit" id="f-sub">新增這筆花費</button>
+      </form></div>
+    </div>
+    <div class="sec">
+      <div class="sec-t">所有花費 <small id="ex-count"></small></div>
+      <div class="card" id="ex-list"></div>
+    </div>
+  </section>
+
+  <!-- 住宿 -->
+  <section id="p-hotel" class="hide">
+    <div class="sec"><div id="ho-box"><div class="loading"><div class="spin"></div>載入住宿…</div></div></div>
+  </section>
+
+  <!-- 購物 -->
+  <section id="p-shop" class="hide">
+    <div class="sec">
+      <div class="filters">
+        <select id="s-day"></select>
+        <select id="s-who"></select>
+        <select id="s-store" class="full"></select>
+        <input id="s-q" class="full" placeholder="搜尋商品 / 店家…">
+      </div>
+      <div class="prog"><i id="s-prog"></i></div>
+      <div class="muted" id="s-stat" style="text-align:right"></div>
+    </div>
+    <div class="card" id="sh-box">
+      <div class="loading"><div class="spin"></div>載入購物清單…</div></div>
+  </section>
+
+  <!-- 航班 -->
+  <section id="p-flight" class="hide">
+    <div class="sec"><div id="fl-box"><div class="loading"><div class="spin"></div>載入航班…</div></div></div>
+  </section>
+
+  <!-- 行前清單 -->
+  <section id="p-checklist" class="hide">
+    <div class="sec">
+      <div class="sec-t">準備進度 <small id="cl-stat"></small></div>
+      <div class="prog"><i id="cl-prog"></i></div>
+      <div class="filters" style="margin-top:12px"><select id="c-who" class="full"></select></div>
+    </div>
+    <div id="cl-box"><div class="loading"><div class="spin"></div>載入清單…</div></div>
+  </section>
+</main>
+
+<div style="height:40px"></div>
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   ⚙️  設定區 — 只有這三行需要你動
+   ══════════════════════════════════════════════════════════════ */
+const SHEET_ID = '12LeEWB_9spEOQ3VZsW0G1gYmokRuWO6GupZsMrLSbdQ';
+const GAS_URL  = '1BzT5eBApWyY04mhc7q0vRYc9rA1hY5eeIYGVOI35WzuhDVjcd7_NrXq4';            // ← 部署 Apps Script 後把網址貼進來（留空 = 只讀不寫）
+const TOKEN    = 'Sx2R1Kz0rjCTIQEJADZKNC7vyXDTJhW0LWpkM1md';  // ← 要和 Code.gs 的 TOKEN 一模一樣
+/* ══════════════════════════════════════════════════════════════ */
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const DB = {};                                   // 各分頁資料
+let CFG = {}, MEMBERS = [], DAYS = 5, START = null;
+
+/* ─────────────── 工具 ─────────────── */
+function csvUrl(sheet){
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`
+       + `?tqx=out:csv&headers=1&sheet=${encodeURIComponent(sheet)}&_=${Date.now()}`;
+}
+function parseCSV(t){
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(q){
+      if(c==='"'){ if(t[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===','){ row.push(cur); cur=''; }
+      else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+      else if(c!=='\r') cur+=c;
+    }
+  }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+async function fetchSheet(name){
+  const res = await fetch(csvUrl(name));
+  if(!res.ok) throw new Error(`讀不到「${name}」分頁 (HTTP ${res.status})`);
+  const txt = await res.text();
+  if(/^\s*</.test(txt)) throw new Error('SHARING');
+  const rows = parseCSV(txt).filter(r=>r.some(c=>String(c).trim()!==''));
+  if(!rows.length) return [];
+  const hs = rows[0].map(h=>String(h).trim());
+  return rows.slice(1).map(r=>{
+    const o={}; hs.forEach((h,i)=>o[h]=(r[i]??'').trim()); return o;
+  });
+}
+const bool = v => /^(true|yes|1|v|✓|是)$/i.test(String(v).trim());
+const esc  = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num  = v => { const n = parseFloat(String(v??'').replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; };
+const nt   = n => 'NT$'+Math.round(n).toLocaleString('en-US');
+function driveImg(u){
+  const m = String(u||'').match(/\/d\/([-\w]{20,})|[?&]id=([-\w]{20,})/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]||m[2]}&sz=w400` : u;
+}
+function mapLink(q,url){
+  if(url && /^https?:/.test(url)) return url;
+  return q ? 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q) : '';
+}
+function toast(msg,bad){
+  const t=$('#toast'); t.textContent=msg; t.className='on'+(bad?' bad':'');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='',2600);
+}
+function dayDate(i){                    // i = 1..DAYS
+  if(!START) return null;
+  const d=new Date(START); d.setDate(d.getDate()+i-1); return d;
+}
+const WD=['日','一','二','三','四','五','六'];
+const fmtMD = d => d ? `${d.getMonth()+1}/${d.getDate()}` : '';
+const fmtWD = d => d ? '週'+WD[d.getDay()] : '';
+
+/* ─────────────── 寫回 Sheet (JSONP) ─────────────── */
+let jseq=0;
+function callGAS(action,payload){
+  return new Promise((resolve,reject)=>{
+    if(!GAS_URL) return reject(new Error('尚未設定 GAS_URL，目前是唯讀模式'));
+    const cb='__gas'+(++jseq);
+    const s=document.createElement('script');
+    const t=setTimeout(()=>{cleanup();reject(new Error('連線逾時'));},20000);
+    function cleanup(){clearTimeout(t);delete window[cb];s.remove();}
+    window[cb]=r=>{cleanup(); r&&r.ok?resolve(r.data):reject(new Error((r&&r.error)||'未知錯誤'));};
+    s.onerror=()=>{cleanup();reject(new Error('無法連線到 Apps Script'));};
+    s.src=GAS_URL+'?callback='+cb+'&token='+encodeURIComponent(TOKEN)
+        +'&action='+encodeURIComponent(action)
+        +'&payload='+encodeURIComponent(JSON.stringify(payload));
+    document.body.appendChild(s);
+  });
+}
+
+/* ─────────────── 資料來源 ───────────────
+   有設定 GAS_URL → 走 Apps Script，一次抓回全部分頁（Sheet 可以保持私密）
+   沒設定        → 退回 Google 的 CSV 匯出（Sheet 必須開放「知道連結的任何人」）  */
+let ALL = null;
+const NEED = {'行程':'天','花費':'付款人','住宿':'名稱','購物':'商品','航班':'方向','行前清單':'項目'};
+
+async function bootData(){
+  if(!GAS_URL) return 'csv';
+  try{ ALL = await callGAS('getAll',{}); return 'gas'; }
+  catch(e){ console.warn('Apps Script 讀取失敗，改用 CSV：',e.message); return 'csv'; }
+}
+async function getSheet(name){
+  const rows = ALL ? (ALL[name]||[]) : await fetchSheet(name);
+  const need = NEED[name];
+  if(need && rows.length && !(need in rows[0])) throw new Error('WRONGSHEET');
+  return rows;
+}
+const HELP_WRONG = `<div class="err"><b>抓到的分頁不對</b>
+  Google 的 CSV 匯出沒有正確切換分頁。請完成 README 步驟 2（部署 Apps Script）
+  並把網址填進 <code>GAS_URL</code>，網頁就會改用 Apps Script 讀取，這個問題會消失。</div>`;
+const HELP_SHARE = `<div class="err"><b>讀不到 Google Sheet</b>
+  兩種解法擇一：<br>
+  ① <b>（建議）</b>照 README 部署 Apps Script，把網址填進 <code>GAS_URL</code> —— 試算表可以維持私密<br>
+  ② 開啟試算表 → 右上「共用」→ 一般存取權改成 <b>知道連結的任何人（檢視者）</b></div>`;
+const errBox = e => e.message==='WRONGSHEET' ? HELP_WRONG
+              : e.message==='SHARING' ? HELP_SHARE
+              : `<div class="err">${esc(e.message)}</div>`;
+
+/* ═══════════════════ 啟動 ═══════════════════ */
+(async function init(){
+  try{
+    await bootData();
+    const cfg = await getSheet('設定');
+    cfg.forEach(r=>CFG[r['項目']]=r['值']);
+    if(!Object.keys(CFG).length) throw new Error('「設定」分頁是空的');
+  }catch(e){
+    $('#boot').innerHTML = errBox(e);
+    return;
+  }
+
+  MEMBERS = (CFG['成員']||'').split(',').map(s=>s.trim()).filter(Boolean);
+  DAYS    = parseInt(CFG['天數']||'5',10) || 5;
+  const sd = (CFG['出發日']||'').replace(/[.\-]/g,'/');
+  START   = /^\d{4}\/\d{1,2}\/\d{1,2}$/.test(sd) ? new Date(sd+' 00:00:00') : null;
+  if(CFG['主題色']){
+    document.documentElement.style.setProperty('--brand',CFG['主題色']);
+    document.querySelector('meta[name=theme-color]').content=CFG['主題色'];
+  }
+
+  document.title = CFG['標題']||'旅遊行程';
+  $('#h-title').textContent = CFG['標題']||'旅遊行程';
+  $('#h-sub').textContent   = CFG['副標題']||'';
+  const s=dayDate(1), e=dayDate(DAYS), meta=[];
+  if(s&&e) meta.push(`${s.getFullYear()}/${fmtMD(s)} – ${fmtMD(e)}`);
+  meta.push(`${DAYS} 天 ${DAYS-1} 夜`);
+  if(MEMBERS.length) meta.push(`${MEMBERS.length} 人・${MEMBERS.join('、')}`);
+  if(s){
+    const dd=Math.ceil((s-new Date(new Date().toDateString()))/864e5);
+    if(dd>0) meta.push(`還有 ${dd} 天`);
+    else if(dd===0) meta.push('就是今天！');
+  }
+  $('#h-meta').innerHTML = meta.map(m=>`<span class="chip">${esc(m)}</span>`).join('');
+
+  buildDays();
+  loadItinerary();
+  loadExpense(); loadHotel(); loadShop(); loadFlight(); loadChecklist();
+})();
+
+/* ─────────────── Tabs ─────────────── */
+$('#tabbar').onclick = e=>{
+  const b=e.target.closest('.tab'); if(!b) return;
+  $$('.tab').forEach(t=>t.classList.toggle('on',t===b));
+  ['itinerary','expense','hotel','shop','flight','checklist']
+    .forEach(k=>$('#p-'+k).classList.toggle('hide',k!==b.dataset.t));
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+/* ═══════════════════ 1. 行程 ═══════════════════ */
+let curDay=1;
+function buildDays(){
+  $('#days').innerHTML = Array.from({length:DAYS},(_,i)=>{
+    const d=dayDate(i+1);
+    return `<div class="day${i===0?' on':''}" data-d="${i+1}">
+      <b>D${i+1}</b><span>${d?fmtMD(d)+' '+fmtWD(d):''}</span></div>`;
+  }).join('');
+  $('#days').onclick = e=>{
+    const el=e.target.closest('.day'); if(!el) return;
+    curDay=+el.dataset.d;
+    $$('#days .day').forEach(x=>x.classList.toggle('on',x===el));
+    renderTL();
+  };
+}
+async function loadItinerary(){
+  try{ DB.itin = await getSheet('行程'); renderTL(); }
+  catch(e){ $('#tl-box').innerHTML=errBox(e); }
+}
+function renderTL(){
+  const rows=(DB.itin||[]).filter(r=>String(r['天']).trim().toUpperCase()==='D'+curDay);
+  if(!rows.length){
+    $('#tl-box').innerHTML=`<div class="card" style="padding:34px 20px;text-align:center">
+      <div style="font-size:34px">🗺️</div>
+      <p class="muted">D${curDay} 還沒有行程<br>到 Google Sheet 的「行程」分頁新增，<code>天</code> 欄填 <b>D${curDay}</b></p></div>`;
+    return;
+  }
+  $('#tl-box').innerHTML = '<div class="tl">'+rows.map((r,i)=>{
+    const type=r['類型']||'其他';
+    const dur = (r['抵達時間']&&r['離開時間']) ? diff(r['抵達時間'],r['離開時間']) : '';
+    const ml  = mapLink(r['地點'], r['地圖連結']);
+    const foot=[];
+    if(r['交通方式']) foot.push(`🚃 ${esc(r['交通方式'])}${r['交通時間']?' · '+esc(r['交通時間']):''}`);
+    if(num(r['交通花費'])) foot.push(`💴 ¥${num(r['交通花費']).toLocaleString()}`);
+    if(ml) foot.push(`<a href="${esc(ml)}" target="_blank" rel="noopener">📍 ${esc(r['地點']||'地圖')}</a>`);
+    if(r['備註']) foot.push(`📝 ${esc(r['備註'])}`);
+    return `<div class="tl-item">
+      <div class="tl-time"><b>${esc(r['抵達時間']||'')}</b><span>${esc(dur)}</span></div>
+      <div class="tl-body"><div class="tl-dot"></div><div class="tl-card">
+        <div class="tl-tags">
+          <span class="pill t-${esc(type)}">${esc(type)}</span>
+          ${r['區域']?`<span class="pill" style="background:#F1EDE8;color:#6B635E">${esc(r['區域'])}</span>`:''}
+        </div>
+        <h4>${esc(r['行程']||'')}</h4>
+        ${r['說明']?`<p class="desc">${esc(r['說明'])}</p>`:''}
+        ${foot.length?`<div class="tl-foot">${foot.join('')}</div>`:''}
+      </div></div></div>`;
+  }).join('')+'</div>';
+}
+function diff(a,b){
+  const p=s=>{const m=String(s).match(/(\d{1,2}):(\d{2})/);return m?+m[1]*60+ +m[2]:null;};
+  const x=p(a),y=p(b); if(x===null||y===null) return '';
+  let d=y-x; if(d<0) d+=1440;
+  return `(${Math.floor(d/60)}:${String(d%60).padStart(2,'0')})`;
+}
+
+/* ═══════════════════ 2. 分帳 ═══════════════════ */
+let payer=null, split=new Set();
+function rate(){ return parseFloat(CFG['匯率']||'0.21')||0.21; }
+function twd(r){ return num(r['台幣']) || num(r['日幣'])*rate(); }
+
+async function loadExpense(){
+  buildPicks();
+  $('#f-date').value = new Date().toISOString().slice(0,10);
+  $('#ex-rate').textContent = `匯率 1${CFG['幣別符號']||'¥'} = ${rate()} 台幣`;
+  try{ DB.exp = await getSheet('花費'); renderExp(); }
+  catch(e){ $('#ex-list').innerHTML=errBox(e); }
+}
+function buildPicks(){
+  $('#f-payer').innerHTML = MEMBERS.map(m=>`<button type="button" class="pick" data-m="${esc(m)}">${esc(m)}</button>`).join('');
+  $('#f-split').innerHTML = MEMBERS.map(m=>`<button type="button" class="pick on" data-m="${esc(m)}">${esc(m)}</button>`).join('');
+  payer = MEMBERS[0]||null; split = new Set(MEMBERS);
+  $$('#f-payer .pick').forEach((b,i)=>b.classList.toggle('on',i===0));
+  $('#f-payer').onclick = e=>{
+    const b=e.target.closest('.pick'); if(!b) return;
+    payer=b.dataset.m; $$('#f-payer .pick').forEach(x=>x.classList.toggle('on',x===b));
+  };
+  $('#f-split').onclick = e=>{
+    const b=e.target.closest('.pick'); if(!b) return;
+    const m=b.dataset.m;
+    split.has(m)?split.delete(m):split.add(m);
+    b.classList.toggle('on',split.has(m));
+  };
+}
+function renderExp(){
+  const rows=DB.exp||[];
+  const total=rows.reduce((s,r)=>s+twd(r),0);
+  const per = MEMBERS.length? total/MEMBERS.length : 0;
+  $('#ex-stats').innerHTML=`
+    <div class="stat"><b>${nt(total)}</b><span>總花費</span></div>
+    <div class="stat"><b>${nt(per)}</b><span>平均每人</span></div>
+    <div class="stat"><b>${rows.length}</b><span>筆紀錄</span></div>`;
+
+  const bal={}; MEMBERS.forEach(m=>bal[m]=0);
+  rows.forEach(r=>{
+    const amt=twd(r); if(!amt) return;
+    const sp=(r['分攤者']||'').split(/[,，、]/).map(s=>s.trim()).filter(Boolean);
+    const list = sp.length?sp:MEMBERS;
+    const p = (r['付款人']||'').trim();
+    if(p in bal) bal[p]+=amt;
+    list.forEach(m=>{ if(m in bal) bal[m]-=amt/list.length; });
+  });
+  $('#ex-bal').innerHTML = MEMBERS.map(m=>`
+    <div class="bal"><span class="who">${esc(m)}</span>
+      <span class="amt ${bal[m]>=0?'pos':'neg'}">${bal[m]>=0?'+':'−'}${nt(Math.abs(bal[m]))}</span></div>`).join('')
+    || '<div class="bal muted">「設定」分頁還沒填成員</div>';
+
+  // 最少轉帳次數
+  const cred=[],debt=[];
+  MEMBERS.forEach(m=>{ const v=Math.round(bal[m]);
+    if(v>0)cred.push({m,v}); else if(v<0)debt.push({m,v:-v}); });
+  cred.sort((a,b)=>b.v-a.v); debt.sort((a,b)=>b.v-a.v);
+  const tx=[]; let i=0,j=0;
+  while(i<debt.length&&j<cred.length){
+    const v=Math.min(debt[i].v,cred[j].v);
+    if(v>0) tx.push(`<div class="row">👤 <b>${esc(debt[i].m)}</b> → <b>${esc(cred[j].m)}</b> <b>${nt(v)}</b></div>`);
+    debt[i].v-=v; cred[j].v-=v;
+    if(debt[i].v<1)i++; if(cred[j].v<1)j++;
+  }
+  $('#ex-settle').innerHTML = tx.length?tx.join(''):'🎉 目前大家都是平的，不用轉帳';
+
+  $('#ex-count').textContent = `共 ${rows.length} 筆`;
+  $('#ex-list').innerHTML = rows.length? [...rows].reverse().map(r=>{
+    const sp=(r['分攤者']||'').split(/[,，、]/).map(s=>s.trim()).filter(Boolean);
+    const done=bool(r['已結算']);
+    return `<div class="exp-item${done?' done':''}">
+      <div>
+        <h5>${esc(r['項目']||'(未命名)')}</h5>
+        <div class="sub">${esc(r['日期']||'')} · ${esc(r['分類']||'')} · ${esc(r['付款人']||'?')} 先付
+          · 分攤 ${sp.length||MEMBERS.length} 人${r['備註']?' · '+esc(r['備註']):''}</div>
+      </div>
+      <div class="money">${nt(twd(r))}
+        ${r['日幣']&&num(r['日幣'])?`<small>${CFG['幣別符號']||'¥'}${num(r['日幣']).toLocaleString()}</small>`:''}
+        <button class="btn sm ghost" style="margin-top:6px" data-settle="${esc(r['ID'])}" data-v="${done?'FALSE':'TRUE'}">
+          ${done?'已結算':'標記結清'}</button>
+      </div></div>`;
+  }).join('') : '<div class="bal muted">還沒有任何花費紀錄</div>';
+
+  $('#ex-list').onclick = async e=>{
+    const b=e.target.closest('[data-settle]'); if(!b) return;
+    b.disabled=true;
+    try{
+      await callGAS('setCells',{sheet:'花費',id:b.dataset.settle,values:{'已結算':b.dataset.v}});
+      const row=(DB.exp||[]).find(x=>x['ID']===b.dataset.settle); if(row) row['已結算']=b.dataset.v;
+      renderExp(); toast('已更新');
+    }catch(err){ toast(err.message,1); b.disabled=false; }
+  };
+}
+$('#ex-form').onsubmit = async ev=>{
+  ev.preventDefault();
+  if(!payer) return toast('請選付款人',1);
+  if(!split.size) return toast('至少要有一個人分攤',1);
+  if(!num($('#f-jpy').value)&&!num($('#f-twd').value)) return toast('金額不能是 0',1);
+  const btn=$('#f-sub'); btn.disabled=true; btn.textContent='送出中…';
+  const vals={
+    '日期': $('#f-date').value.replace(/-/g,'/'),
+    '項目': $('#f-item').value.trim(),
+    '分類': $('#f-cat').value,
+    '付款人': payer,
+    '日幣': $('#f-jpy').value||'',
+    '台幣': $('#f-twd').value||'',
+    '分攤者': [...split].join(','),
+    '已結算':'FALSE',
+    '備註': $('#f-note').value.trim()
+  };
+  try{
+    const r=await callGAS('addRow',{sheet:'花費',values:vals});
+    DB.exp.push(Object.assign({ID:r.id},vals));
+    renderExp(); toast('已寫進 Google Sheet ✓');
+    $('#f-item').value=''; $('#f-jpy').value=''; $('#f-twd').value=''; $('#f-note').value='';
+  }catch(err){ toast(err.message,1); }
+  btn.disabled=false; btn.textContent='新增這筆花費';
+};
+
+/* ═══════════════════ 3. 住宿 ═══════════════════ */
+async function loadHotel(){
+  try{
+    const rows=await getSheet('住宿');
+    $('#ho-box').innerHTML = rows.length? rows.map(r=>{
+      const ml=mapLink(r['名稱']+' '+(r['地址']||''), r['地圖連結']);
+      const kv=[['區域',r['區域']],['房型',r['房型']],['地址',r['地址']],
+                ['入住資訊',r['入住資訊']],['周邊',r['附近有什麼']],['備註',r['備註']]]
+               .filter(x=>x[1]);
+      return `<div class="card hotel">
+        <div class="dates">${esc(r['入住日']||'')} → ${esc(r['退房日']||'')}</div>
+        <h4>${esc(r['名稱']||'')}</h4>
+        ${r['總價']?`<div style="font-weight:900;color:var(--brand-d);margin-top:2px">${esc(r['總價'])}</div>`:''}
+        ${r['圖片']?`<img src="${esc(driveImg(r['圖片']))}" style="border-radius:12px;margin-top:10px" loading="lazy" alt="">`:''}
+        <dl class="kv">${kv.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          ${ml?`<a class="btn sm ghost" style="text-decoration:none" href="${esc(ml)}" target="_blank" rel="noopener">📍 開地圖</a>`:''}
+          ${r['訂房連結']&&/^https?:/.test(r['訂房連結'])?`<a class="btn sm ghost" style="text-decoration:none" href="${esc(r['訂房連結'])}" target="_blank" rel="noopener">🔗 訂房頁</a>`:''}
+        </div></div>`;
+    }).join('') : '<div class="card" style="padding:30px;text-align:center" class="muted">還沒有住宿資料</div>';
+  }catch(e){ $('#ho-box').innerHTML=errBox(e); }
+}
+
+/* ═══════════════════ 4. 購物 ═══════════════════ */
+async function loadShop(){
+  try{
+    DB.shop=await getSheet('購物');
+    const opt=(el,label,vals)=>{
+      $(el).innerHTML=`<option value="">${label}</option>`+
+        [...new Set(vals.filter(Boolean))].map(v=>`<option>${esc(v)}</option>`).join('');
+    };
+    opt('#s-day','全部天數',DB.shop.map(r=>r['天']));
+    opt('#s-store','全部店家',DB.shop.map(r=>r['店家']));
+    opt('#s-who','全部人',MEMBERS);
+    ['#s-day','#s-store','#s-who'].forEach(s=>$(s).onchange=renderShop);
+    $('#s-q').oninput=renderShop;
+    renderShop();
+  }catch(e){ $('#sh-box').innerHTML=errBox(e); }
+}
+function renderShop(){
+  const all=DB.shop||[];
+  const d=$('#s-day').value, st=$('#s-store').value, w=$('#s-who').value,
+        q=$('#s-q').value.trim().toLowerCase();
+  const rows=all.filter(r=>
+    (!d||r['天']===d) && (!st||r['店家']===st) &&
+    (!w||(r['誰要的']||'').includes(w)) &&
+    (!q||(`${r['商品']} ${r['店家']} ${r['備註']}`).toLowerCase().includes(q)));
+  const done=all.filter(r=>bool(r['已購買'])).length;
+  $('#s-prog').style.width = all.length?(done/all.length*100)+'%':'0';
+  $('#s-stat').textContent = `已買 ${done} / ${all.length} 項${rows.length!==all.length?`（篩選出 ${rows.length}）`:''}`;
+
+  if(!rows.length){ $('#sh-box').innerHTML='<div class="loading">沒有符合的項目</div>'; return; }
+  const g={}; rows.forEach(r=>{ const k=`${r['天']||'未分天'} · ${r['店家']||'未分店'}`; (g[k]=g[k]||[]).push(r); });
+  $('#sh-box').innerHTML = Object.entries(g).map(([k,list])=>{
+    const hrs=list[0]['營業時間'];
+    return `<div class="store-h">${esc(k)}${hrs?` <span style="font-weight:500;color:var(--ink3)">· ${esc(hrs)}</span>`:''}</div>`
+      + list.map(r=>{
+        const done=bool(r['已購買']);
+        const ml=mapLink(r['店家']+' '+(r['地址']||''), r['地圖連結']);
+        return `<div class="shop${done?' done':''}">
+          <button class="cb${done?' on':''}" data-id="${esc(r['ID'])}" data-v="${done?'FALSE':'TRUE'}" aria-label="打勾"></button>
+          <div>
+            <div class="name">${esc(r['商品']||'')}</div>
+            <div class="who">${r['誰要的']?'👤 '+esc(r['誰要的']):''}${r['價格']?' · 約 '+esc(r['價格']):''}${r['備註']?' · '+esc(r['備註']):''}</div>
+            <div class="links">
+              ${ml?`<a href="${esc(ml)}" target="_blank" rel="noopener">📍 地圖</a>`:''}
+              ${r['折價券']&&/^https?:/.test(r['折價券'])?`<a href="${esc(r['折價券'])}" target="_blank" rel="noopener">🎟 折價券</a>`:''}
+            </div>
+          </div>
+          ${r['圖片']?`<img class="thumb" src="${esc(driveImg(r['圖片']))}" loading="lazy" alt="">`:'<span></span>'}
+        </div>`;
+      }).join('');
+  }).join('');
+}
+$('#sh-box').onclick = async e=>{
+  const b=e.target.closest('.cb'); if(!b) return;
+  const id=b.dataset.id, v=b.dataset.v;
+  b.classList.toggle('on', v==='TRUE');           // 先給回饋
+  try{
+    await callGAS('setCells',{sheet:'購物',id,values:{'已購買':v}});
+    const row=(DB.shop||[]).find(x=>x['ID']===id); if(row) row['已購買']=v;
+    renderShop();
+  }catch(err){ b.classList.toggle('on', v!=='TRUE'); toast(err.message,1); }
+};
+
+/* ═══════════════════ 5. 航班 ═══════════════════ */
+async function loadFlight(){
+  try{
+    const rows=await getSheet('航班');
+    $('#fl-box').innerHTML = rows.length? rows.map(r=>{
+      const sp=s=>{const m=String(s||'').match(/(\d{4}\/\d{1,2}\/\d{1,2})?\s*(\d{1,2}:\d{2})?/);
+        return {d:(m&&m[1])||'',t:(m&&m[2])||''};};
+      const a=sp(r['出發時間']), b=sp(r['抵達時間']);
+      const kv=[['航廈',r['航廈']],['訂位代號',r['訂位代號']],['行李',r['行李規定']],['備註',r['備註']]].filter(x=>x[1]);
+      return `<div class="card fly">
+        <div class="top">
+          <span class="pill" style="background:var(--brand-l);color:var(--brand-d)">${esc(r['方向']||'')}</span>
+          <span class="muted">${esc(r['航空公司']||'')} ${esc(r['航班號']||'')}</span>
+        </div>
+        <div class="rt">
+          <div><div class="ap">${esc(r['出發地']||'')}</div>
+               <div class="tm">${esc(a.t)}</div><div class="dt">${esc(a.d)}</div></div>
+          <div class="arrow"><span>✈︎</span></div>
+          <div><div class="ap">${esc(r['抵達地']||'')}</div>
+               <div class="tm">${esc(b.t)}</div><div class="dt">${esc(b.d)}</div></div>
+        </div>
+        ${kv.length?`<dl class="kv">${kv.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`:''}
+      </div>`;
+    }).join('') : '<div class="card" style="padding:30px;text-align:center">還沒有航班資料</div>';
+  }catch(e){ $('#fl-box').innerHTML=errBox(e); }
+}
+
+/* ═══════════════════ 6. 行前清單 ═══════════════════ */
+async function loadChecklist(){
+  $('#c-who').innerHTML='<option value="">全部人</option>'+
+    MEMBERS.map(m=>`<option>${esc(m)}</option>`).join('');
+  $('#c-who').onchange=renderCL;
+  try{ DB.cl=await getSheet('行前清單'); renderCL(); }
+  catch(e){ $('#cl-box').innerHTML=errBox(e); }
+}
+function renderCL(){
+  const all=DB.cl||[], w=$('#c-who').value;
+  const rows=all.filter(r=>!w||!r['負責人']||r['負責人']==='全部'||r['負責人'].includes(w));
+  const done=rows.filter(r=>bool(r['已完成'])).length;
+  $('#cl-prog').style.width = rows.length?(done/rows.length*100)+'%':'0';
+  $('#cl-stat').textContent = `${done} / ${rows.length} 完成`;
+  const g={}; rows.forEach(r=>{ const k=r['分類']||'其他'; (g[k]=g[k]||[]).push(r); });
+  $('#cl-box').innerHTML = Object.entries(g).map(([k,list])=>{
+    const d=list.filter(r=>bool(r['已完成'])).length;
+    return `<details class="card cl-cat"${d<list.length?' open':''}>
+      <summary>${esc(k)} <small>${d}/${list.length}</small></summary>
+      ${list.map(r=>{
+        const ok=bool(r['已完成']);
+        return `<div class="cl-item${ok?' done':''}">
+          <button class="cb${ok?' on':''}" data-id="${esc(r['ID'])}" data-v="${ok?'FALSE':'TRUE'}" aria-label="打勾"></button>
+          <div><div class="txt">${esc(r['項目']||'')}</div>
+            <div class="who">${r['負責人']?'👤 '+esc(r['負責人']):''}${r['備註']?' · '+esc(r['備註']):''}</div></div>
+        </div>`;
+      }).join('')}</details>`;
+  }).join('') || '<div class="card" style="padding:30px;text-align:center">沒有項目</div>';
+}
+$('#cl-box').onclick = async e=>{
+  const b=e.target.closest('.cb'); if(!b) return;
+  e.preventDefault();
+  const id=b.dataset.id, v=b.dataset.v;
+  b.classList.toggle('on', v==='TRUE');
+  try{
+    await callGAS('setCells',{sheet:'行前清單',id,values:{'已完成':v}});
+    const row=(DB.cl||[]).find(x=>x['ID']===id); if(row) row['已完成']=v;
+    renderCL();
+  }catch(err){ b.classList.toggle('on', v!=='TRUE'); toast(err.message,1); }
+};
+</script>
+</body>
+</html>
