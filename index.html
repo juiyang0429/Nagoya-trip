@@ -331,7 +331,11 @@ form.f{display:grid;gap:10px;padding:14px}
    ⚙️  設定區 — 只有這三行需要你動
    ══════════════════════════════════════════════════════════════ */
 const SHEET_ID = '12LeEWB_9spEOQ3VZsW0G1gYmokRuWO6GupZsMrLSbdQ';
-const GAS_URL  = '1BzT5eBApWyY04mhc7q0vRYc9rA1hY5eeIYGVOI35WzuhDVjcd7_NrXq4';            // ← 部署 Apps Script 後把網址貼進來（留空 = 只讀不寫）
+// ↓ 貼「網頁應用程式」的完整網址，長這樣：
+//   https://script.google.com/macros/s/AKfycb……/exec
+//   （只貼 AKfycb 開頭那一段也可以，程式會自動補齊）
+//   ⚠️ 不要貼「指令碼 ID」（1BzT… 開頭的那種），那個不是網址
+const GAS_URL  = '';
 const TOKEN    = 'Sx2R1Kz0rjCTIQEJADZKNC7vyXDTJhW0LWpkM1md';  // ← 要和 Code.gs 的 TOKEN 一模一樣
 /* ══════════════════════════════════════════════════════════════ */
 
@@ -399,17 +403,27 @@ const fmtMD = d => d ? `${d.getMonth()+1}/${d.getDate()}` : '';
 const fmtWD = d => d ? '週'+WD[d.getDay()] : '';
 
 /* ─────────────── 寫回 Sheet (JSONP) ─────────────── */
+/* 把使用者可能貼錯的幾種寫法自動修正成完整網址 */
+function normGas(u){
+  u = String(u||'').trim().replace(/^["'\s]+|["'\s]+$/g,'');
+  if(!u) return '';
+  if(/^AKfyc[\w-]+$/.test(u)) return 'https://script.google.com/macros/s/'+u+'/exec';   // 只貼了部署 ID
+  if(/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+$/.test(u)) return u+'/exec';    // 少了 /exec
+  return u.replace(/\/+$/,'');
+}
+const GAS = normGas(GAS_URL);
+
 let jseq=0;
 function callGAS(action,payload){
   return new Promise((resolve,reject)=>{
-    if(!GAS_URL) return reject(new Error('尚未設定 GAS_URL，目前是唯讀模式'));
+    if(!GAS) return reject(new Error('尚未設定 GAS_URL，目前是唯讀模式'));
     const cb='__gas'+(++jseq);
     const s=document.createElement('script');
     const t=setTimeout(()=>{cleanup();reject(new Error('連線逾時'));},20000);
     function cleanup(){clearTimeout(t);delete window[cb];s.remove();}
     window[cb]=r=>{cleanup(); r&&r.ok?resolve(r.data):reject(new Error((r&&r.error)||'未知錯誤'));};
     s.onerror=()=>{cleanup();reject(new Error('無法連線到 Apps Script'));};
-    s.src=GAS_URL+'?callback='+cb+'&token='+encodeURIComponent(TOKEN)
+    s.src=GAS+'?callback='+cb+'&token='+encodeURIComponent(TOKEN)
         +'&action='+encodeURIComponent(action)
         +'&payload='+encodeURIComponent(JSON.stringify(payload));
     document.body.appendChild(s);
@@ -422,10 +436,43 @@ function callGAS(action,payload){
 let ALL = null;
 const NEED = {'行程':'天','花費':'付款人','住宿':'名稱','購物':'商品','航班':'方向','行前清單':'項目'};
 
+let GAS_ERR = null;
+const GAS_OK_RE = /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
+const pingUrl = () => GAS+'?token='+encodeURIComponent(TOKEN)+'&action=ping';
+
 async function bootData(){
-  if(!GAS_URL) return 'csv';
+  if(!GAS) return 'csv';
+  if(!GAS_OK_RE.test(GAS)){ GAS_ERR='FORMAT'; return 'csv'; }
   try{ ALL = await callGAS('getAll',{}); return 'gas'; }
-  catch(e){ console.warn('Apps Script 讀取失敗，改用 CSV：',e.message); return 'csv'; }
+  catch(e){ GAS_ERR=e.message; console.warn('Apps Script 失敗，改用 CSV：',e.message); return 'csv'; }
+}
+
+/* 連不上 Apps Script 時，直接在畫面上把該檢查的東西列出來 */
+function gasHelp(){
+  if(GAS_ERR==='FORMAT'){
+    const looksLikeScriptId = /^1[\w-]{20,}$/.test(String(GAS_URL).trim());
+    return `<div class="err">
+    <b>GAS_URL 填錯了</b>
+    目前填的是：<code>${esc(GAS_URL)}</code><br><br>
+    ${looksLikeScriptId ? `這是「<b>指令碼 ID</b>」，不是網址 —— 它在「專案設定」那頁，不能用。<br>
+      你要的是<b>網頁應用程式網址</b>，裡面那一段是 <b>AKfycb</b> 開頭的：<br>` : ''}
+    正確長相：<code>https://script.google.com/macros/s/<b>AKfycb</b>……/exec</code><br><br>
+    <b>去哪裡拿：</b>Apps Script → 部署 → 管理部署作業 → 點左邊那筆 →
+    下面「網頁應用程式」那一欄的網址 → 按複製圖示<br>
+    · 結尾要是 <b>/exec</b>，不是 <code>/dev</code>（<code>/dev</code> 只有你登入時能用）<br>
+    · 只貼 <code>AKfycb……</code> 那一段也可以，程式會自動補齊</div>`;
+  }
+  return `<div class="err">
+    <b>連不上 Apps Script</b>
+    <a href="${esc(pingUrl())}" target="_blank" rel="noopener">👉 點這裡直接測試你的網址</a>
+    （新分頁打開，看到 <code>{"ok":true…}</code> 就代表後端沒問題）<br><br>
+    看到別的東西的話，對照一下：<br>
+    · <b>要求你登入 Google</b> → 部署時「誰可以存取」沒選 <b>任何人</b>。
+      回 Apps Script → 部署 → 管理部署作業 → 鉛筆 → 改成「任何人」→ 部署<br>
+    · <b>「很抱歉，發生意外錯誤」</b> → 網址對但程式壞了，檢查 <code>Code.gs</code> 有沒有貼完整<br>
+    · <b>{"ok":false,"error":"token 不正確"}</b> → 兩個檔案的 <code>TOKEN</code> 不一樣<br><br>
+    改完 <code>Code.gs</code> 一定要<b>重新部署</b>（版本選「新版本」），不然跑的還是舊的。
+    <span class="muted">（技術訊息：${esc(GAS_ERR||'')}）</span></div>`;
 }
 async function getSheet(name){
   const rows = ALL ? (ALL[name]||[]) : await fetchSheet(name);
@@ -440,7 +487,8 @@ const HELP_SHARE = `<div class="err"><b>讀不到 Google Sheet</b>
   兩種解法擇一：<br>
   ① <b>（建議）</b>照 README 部署 Apps Script，把網址填進 <code>GAS_URL</code> —— 試算表可以維持私密<br>
   ② 開啟試算表 → 右上「共用」→ 一般存取權改成 <b>知道連結的任何人（檢視者）</b></div>`;
-const errBox = e => e.message==='WRONGSHEET' ? HELP_WRONG
+const errBox = e => GAS_ERR ? gasHelp()
+              : e.message==='WRONGSHEET' ? HELP_WRONG
               : e.message==='SHARING' ? HELP_SHARE
               : `<div class="err">${esc(e.message)}</div>`;
 
@@ -455,6 +503,8 @@ const errBox = e => e.message==='WRONGSHEET' ? HELP_WRONG
     $('#boot').innerHTML = errBox(e);
     return;
   }
+  // 讀得到資料但 Apps Script 連不上（走 CSV 備援）→ 還是要提醒，不然按打勾會一直失敗
+  if(GAS_ERR) $('#boot').innerHTML = gasHelp();
 
   MEMBERS = (CFG['成員']||'').split(',').map(s=>s.trim()).filter(Boolean);
   DAYS    = parseInt(CFG['天數']||'5',10) || 5;
