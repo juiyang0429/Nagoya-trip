@@ -203,6 +203,21 @@ form.f{display:grid;gap:10px;padding:14px}
 .cl-item .txt{font-size:14px;font-weight:600;line-height:1.5}
 .cl-item .who{font-size:11.5px;color:var(--ink3);margin-top:2px}
 
+/* 通行碼鎖定畫面 */
+#lock{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;
+  padding:24px;background:linear-gradient(160deg,var(--brand) 0%,var(--brand-d) 100%)}
+#lock.on{display:flex}
+#lock .box{background:#fff;border-radius:20px;padding:30px 24px 24px;width:100%;max-width:340px;
+  text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+#lock .ico{font-size:38px;line-height:1}
+#lock h2{margin:10px 0 2px;font-size:19px;font-weight:900}
+#lock p{margin:0 0 18px;font-size:13px;color:var(--ink3)}
+#lock input{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:13px 14px;
+  font-size:17px;font-family:inherit;text-align:center;letter-spacing:2px;margin-bottom:10px}
+#lock input:focus{outline:0;border-color:var(--brand)}
+#lock .btn{width:100%}
+#lock .msg{margin-top:12px;font-size:13px;font-weight:700;color:var(--brand-d);min-height:19px}
+
 /* 圖片放大 */
 #lb{position:fixed;inset:0;background:rgba(20,18,17,.92);z-index:200;display:none;
   align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
@@ -263,12 +278,13 @@ form.f{display:grid;gap:10px;padding:14px}
       <div class="stat-row" id="ex-stats"></div>
     </div>
     <div class="sec">
-      <div class="sec-t">每個人的收支 <small>正數 = 該收回</small></div>
+      <div class="sec-t">每個人的收支 <small id="ex-bal-note">正數 = 該收回</small></div>
       <div class="card" id="ex-bal"></div>
     </div>
     <div class="sec">
       <div class="sec-t">結算建議 <small>最少轉帳次數</small></div>
       <div class="settle" id="ex-settle"></div>
+      <div id="ex-bulk" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"></div>
     </div>
     <div class="sec">
       <div class="sec-t">記一筆</div>
@@ -293,7 +309,10 @@ form.f{display:grid;gap:10px;padding:14px}
       </form></div>
     </div>
     <div class="sec">
-      <div class="sec-t">所有花費 <small id="ex-count"></small></div>
+      <div class="sec-t">花費明細 <small id="ex-count"></small></div>
+      <label class="muted" style="display:flex;gap:7px;align-items:center;margin:-4px 0 8px;cursor:pointer">
+        <input type="checkbox" id="ex-showdone" style="width:16px;height:16px;accent-color:var(--brand)">
+        顯示已結清的</label>
       <div class="card" id="ex-list"></div>
     </div>
   </section>
@@ -336,6 +355,15 @@ form.f{display:grid;gap:10px;padding:14px}
 </main>
 
 <div style="height:40px"></div>
+<div id="lock"><div class="box">
+  <div class="ico">🔒</div>
+  <h2 id="lock-title">名古屋 5天4夜</h2>
+  <p>請輸入通行碼</p>
+  <input id="lock-in" type="password" autocomplete="current-password" placeholder="通行碼">
+  <button class="btn" id="lock-go">進入</button>
+  <div class="msg" id="lock-msg"></div>
+</div></div>
+
 <div id="lb"><button class="x" aria-label="關閉">&times;</button><img alt=""><div class="cap"></div></div>
 <div id="toast"></div>
 
@@ -418,6 +446,51 @@ const WD=['日','一','二','三','四','五','六'];
 const fmtMD = d => d ? `${d.getMonth()+1}/${d.getDate()}` : '';
 const fmtWD = d => d ? '週'+WD[d.getDay()] : '';
 
+/* ─────────────── 通行碼 ───────────────
+   通行碼本身「不在這個檔案裡」，只存在 Code.gs。
+   使用者輸入後算成 SHA-256 存在瀏覽器，之後不用再輸。
+   網址加 ?logout=1 可以清掉重輸。                        */
+const AUTH_KEY='nagoya-trip-auth';
+let AUTH = '';
+try{
+  if(location.search.indexOf('logout')>=0) localStorage.removeItem(AUTH_KEY);
+  AUTH = localStorage.getItem(AUTH_KEY) || '';
+}catch(e){}
+
+async function sha256hex(txt){
+  try{
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){ return txt; }        // 極舊瀏覽器／非安全環境 → 退回原文，後端也接受
+}
+function showLock(msg){
+  $('#lock').classList.add('on');
+  $('#lock-msg').textContent = msg||'';
+  setTimeout(()=>$('#lock-in').focus(),100);
+}
+async function tryUnlock(){
+  const v = $('#lock-in').value.trim();
+  if(!v) return;
+  const btn=$('#lock-go'); btn.disabled=true; btn.textContent='驗證中…';
+  $('#lock-msg').textContent='';
+  try{
+    AUTH = await sha256hex(v);
+    await callGAS('ping',{});                       // 後端驗，通過才存
+    try{ localStorage.setItem(AUTH_KEY, AUTH); }catch(e){}
+    location.href = location.pathname;              // 重新載入，狀態最乾淨
+  }catch(err){
+    AUTH='';
+    $('#lock-msg').textContent =
+      err.message==='AUTH_LOCKED' ? '錯太多次了，請 10 分鐘後再試'
+      : /AUTH/.test(err.message)  ? '通行碼不對'
+      : err.message;
+    btn.disabled=false; btn.textContent='進入';
+    $('#lock-in').select();
+  }
+}
+$('#lock-go').onclick = tryUnlock;
+$('#lock-in').addEventListener('keydown',e=>{ if(e.key==='Enter') tryUnlock(); });
+
 /* ─────────────── 寫回 Sheet (JSONP) ─────────────── */
 /* 把使用者可能貼錯的幾種寫法自動修正成完整網址 */
 function normGas(u){
@@ -440,6 +513,7 @@ function callGAS(action,payload){
     window[cb]=r=>{cleanup(); r&&r.ok?resolve(r.data):reject(new Error((r&&r.error)||'未知錯誤'));};
     s.onerror=()=>{cleanup();reject(new Error('無法連線到 Apps Script'));};
     s.src=GAS+'?callback='+cb+'&token='+encodeURIComponent(TOKEN)
+        +'&auth='+encodeURIComponent(AUTH||'')
         +'&action='+encodeURIComponent(action)
         +'&payload='+encodeURIComponent(JSON.stringify(payload));
     document.body.appendChild(s);
@@ -560,10 +634,15 @@ function applyTheme(){
     cfg.forEach(r=>CFG[r['項目']]=r['值']);
     if(!Object.keys(CFG).length) throw new Error('「設定」分頁是空的');
   }catch(e){
+    if(/^AUTH/.test(GAS_ERR||'') || /^AUTH/.test(e.message||'')){
+      showLock(GAS_ERR==='AUTH_LOCKED' ? '錯太多次了，請 10 分鐘後再試' : '');
+      return;
+    }
     $('#boot').innerHTML = errBox(e);
     return;
   }
   // 讀得到資料但 Apps Script 連不上（走 CSV 備援）→ 還是要提醒，不然按打勾會一直失敗
+  if(/^AUTH/.test(GAS_ERR||'')){ showLock(); return; }
   if(GAS_ERR) $('#boot').innerHTML = gasHelp();
 
   MEMBERS = (CFG['成員']||'').split(',').map(s=>s.trim()).filter(Boolean);
@@ -686,15 +765,23 @@ function buildPicks(){
 }
 function renderExp(){
   const rows=DB.exp||[];
+  /* 已結算 = 這筆錢已經還清了，所以：
+     ・總覽（總花費／平均每人）算全部 —— 這趟總共花了多少
+     ・收支和結算建議只算「未結算」 —— 還沒喬完的部分       */
+  const open = rows.filter(r=>!bool(r['已結算']));
+  const doneCount = rows.length - open.length;
   const total=rows.reduce((s,r)=>s+twd(r),0);
   const per = MEMBERS.length? total/MEMBERS.length : 0;
+  const openSum = open.reduce((s,r)=>s+twd(r),0);
   $('#ex-stats').innerHTML=`
-    <div class="stat"><b>${nt(total)}</b><span>總花費</span></div>
+    <div class="stat"><b>${nt(total)}</b><span>總花費（${rows.length} 筆）</span></div>
     <div class="stat"><b>${nt(per)}</b><span>平均每人</span></div>
-    <div class="stat"><b>${rows.length}</b><span>筆紀錄</span></div>`;
+    <div class="stat"><b>${nt(openSum)}</b><span>待結算（${open.length} 筆）</span></div>`;
+  $('#ex-bal-note').textContent = doneCount
+    ? `已排除 ${doneCount} 筆結清的` : '正數 = 該收回';
 
   const bal={}; MEMBERS.forEach(m=>bal[m]=0);
-  rows.forEach(r=>{
+  open.forEach(r=>{
     const amt=twd(r); if(!amt) return;
     const sp=(r['分攤者']||'').split(/[,，、]/).map(s=>s.trim()).filter(Boolean);
     const list = sp.length?sp:MEMBERS;
@@ -719,10 +806,21 @@ function renderExp(){
     debt[i].v-=v; cred[j].v-=v;
     if(debt[i].v<1)i++; if(cred[j].v<1)j++;
   }
-  $('#ex-settle').innerHTML = tx.length?tx.join(''):'🎉 目前大家都是平的，不用轉帳';
+  $('#ex-settle').innerHTML = tx.length ? tx.join('')
+    : (rows.length && !open.length ? '🎉 全部都結清了，帳目歸零'
+                                   : '🎉 目前大家都是平的，不用轉帳');
 
-  $('#ex-count').textContent = `共 ${rows.length} 筆`;
-  $('#ex-list').innerHTML = rows.length? [...rows].reverse().map(r=>{
+  // 一次結清 / 一次取消（都要按兩下確認）
+  $('#ex-bulk').innerHTML =
+    (open.length ? `<button class="btn sm" data-bulk="TRUE">全部標記結清（${open.length} 筆）</button>` : '') +
+    (doneCount   ? `<button class="btn sm ghost" data-bulk="FALSE">全部取消結清（${doneCount} 筆）</button>` : '');
+
+  // 花費列表（可切換要不要顯示已結清的）
+  const showDone = $('#ex-showdone').checked;
+  const list = showDone ? rows : open;
+  $('#ex-count').textContent = doneCount
+    ? `未結清 ${open.length} 筆・已結清 ${doneCount} 筆` : `共 ${rows.length} 筆`;
+  $('#ex-list').innerHTML = list.length? [...list].reverse().map(r=>{
     const sp=(r['分攤者']||'').split(/[,，、]/).map(s=>s.trim()).filter(Boolean);
     const done=bool(r['已結算']);
     return `<div class="exp-item${done?' done':''}">
@@ -736,7 +834,7 @@ function renderExp(){
         <button class="btn sm ghost" style="margin-top:6px" data-settle="${esc(r['ID'])}" data-v="${done?'FALSE':'TRUE'}">
           ${done?'已結算':'標記結清'}</button>
       </div></div>`;
-  }).join('') : '<div class="bal muted">還沒有任何花費紀錄</div>';
+  }).join('') : `<div class="bal muted">${rows.length?'沒有未結清的花費 🎉':'還沒有任何花費紀錄'}</div>`;
 
   $('#ex-list').onclick = async e=>{
     const b=e.target.closest('[data-settle]'); if(!b) return;
@@ -748,6 +846,31 @@ function renderExp(){
     }catch(err){ toast(err.message,1); b.disabled=false; }
   };
 }
+$('#ex-showdone').onchange = ()=>renderExp();
+
+/* 批次結清：第一下先變成確認鍵，6 秒沒動作自動復原，避免誤觸 */
+$('#ex-bulk').onclick = async e=>{
+  const b=e.target.closest('[data-bulk]'); if(!b) return;
+  const to=b.dataset.bulk;
+  if(b.dataset.armed!=='1'){
+    b.dataset.armed='1'; b.dataset.label=b.textContent;
+    b.textContent = to==='TRUE' ? '再按一次確認結清' : '再按一次確認取消';
+    clearTimeout(b._t);
+    b._t=setTimeout(()=>{ b.dataset.armed=''; b.textContent=b.dataset.label; },6000);
+    return;
+  }
+  clearTimeout(b._t); b.disabled=true; b.textContent='處理中…';
+  const targets=(DB.exp||[]).filter(r=>bool(r['已結算'])!==(to==='TRUE'));
+  if(!targets.length){ renderExp(); return; }
+  try{
+    const res=await callGAS('setCellsMany',{sheet:'花費',
+      items:targets.map(r=>({id:r['ID'],values:{'已結算':to}}))});
+    targets.forEach(r=>r['已結算']=to);
+    renderExp();
+    toast(`已更新 ${res&&res.updated!=null?res.updated:targets.length} 筆`);
+  }catch(err){ renderExp(); toast(err.message,1); }
+};
+
 $('#ex-form').onsubmit = async ev=>{
   ev.preventDefault();
   if(!payer) return toast('請選付款人',1);
